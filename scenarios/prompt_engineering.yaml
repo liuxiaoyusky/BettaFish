@@ -1,0 +1,133 @@
+# ============================================
+# 场景配置：Prompt工程与技术
+# ============================================
+
+metadata:
+  name: "Prompt工程"
+  description: "专注于prompt技术、工具和最佳实践的分析"
+  version: "1.0"
+  author: "BettaFish Team"
+
+# ===== 爬虫关键词提取配置 =====
+crawler:
+  topic_extraction:
+    system_prompt: "你是一个Prompt工程专家，擅长识别和分析prompt技术进展。"
+    
+    user_prompt_template: |
+      请分析以下{news_count}条今日热点新闻，聚焦Prompt工程领域，完成两个任务：
+      
+      新闻列表：
+      {news_text}
+      
+      任务1：提取Prompt工程相关关键词（最多{max_keywords}个）
+      - 优先提取以下领域的关键词：
+        * Prompt技术和方法（如CoT、Few-shot、ReAct、ToT等）
+        * Prompt工具和框架（如PromptPerfect、LangChain Prompt、Semantic Kernel等）
+        * Prompt优化和测试技术
+        * Prompt模板和最佳实践
+        * AI Agent和工作流设计
+        * Prompt安全和防护
+      - 关键词应该适合用于社交媒体平台搜索
+      - **严格过滤掉与Prompt工程无关的内容**
+      - 如果某条新闻不涉及Prompt技术，可以忽略
+      
+      任务2：撰写Prompt工程领域分析总结（150-300字）
+      - 概括今日Prompt工程的主要进展
+      - 关注新技术、新工具、新实践、新研究
+      - 分析这些进展对AI应用开发的影响
+      - 如果没有相关新闻，说明"今日暂无Prompt工程相关新闻"
+      - 语言专业且实用
+      
+      请严格按照以下JSON格式输出：
+      ```json
+      {{
+        "keywords": ["关键词1", "关键词2", "关键词3"],
+        "summary": "今日Prompt工程分析总结..."
+      }}
+      ```
+      
+      请直接输出JSON格式的结果，不要包含其他文字说明。
+    
+    keyword_filters:
+      include_patterns:
+        - "(?i)(prompt|提示词|提示工程|few.?shot|chain.?of.?thought|cot|react|tree.?of.?thought|tot|agent|工作流)"
+      exclude_patterns:
+        - "(?i)(娱乐|游戏|影视|音乐)"
+      min_length: 3
+      max_length: 30
+
+# ===== QueryEngine配置 =====
+query_engine:
+  system_prompt: |
+    你是一个Prompt工程专家。重点关注：
+    
+    1. **Prompt技术**
+       - 新的prompt技术和方法论
+       - Prompt优化技巧
+       - 上下文学习（ICL）技术
+       - 思维链（CoT）及其变体
+    
+    2. **工具和框架**
+       - Prompt开发工具
+       - Prompt管理平台
+       - 自动化prompt优化
+    
+    3. **最佳实践**
+       - 实际应用案例
+       - Prompt模板库
+       - 效果评估方法
+    
+    在分析时，请：
+    - 关注技术细节和实现方法
+    - 评估实用性和效果
+    - 提供可操作的见解
+  
+  analysis_focus:
+    - "Prompt技术创新"
+    - "工具和框架更新"
+    - "实践案例分享"
+    - "性能和效果对比"
+    - "最佳实践总结"
+
+# ===== MediaEngine配置 =====
+media_engine:
+  system_prompt: |
+    你是一个Prompt工程多模态内容分析专家。在分析内容时：
+    - 识别prompt示例和模板
+    - 提取prompt设计技巧
+    - 理解prompt工作流程图
+    - 捕捉效果对比和评测数据
+  
+  analysis_focus:
+    - "Prompt示例和模板"
+    - "设计模式和技巧"
+    - "效果演示和对比"
+    - "工具使用教程"
+
+# ===== InsightEngine配置 =====
+insight_engine:
+  system_prompt: |
+    你是一个Prompt工程数据分析专家。在分析讨论时，关注：
+    - 开发者对prompt技术的评价
+    - 实际应用中的效果反馈
+    - Prompt优化的经验分享
+    - 常见问题和解决方案
+  
+  analysis_focus:
+    - "技术采用和效果"
+    - "问题和挑战"
+    - "经验和技巧分享"
+    - "工具选择和对比"
+
+# ===== ReportEngine配置 =====
+report_engine:
+  preferred_templates:
+    - "特定政策或行业动态舆情分析报告.md"
+    - "市场竞争格局舆情分析报告模板.md"
+  
+  report_style:
+    tone: "实用专业"
+    depth: "技术与实践结合"
+    focus: "方法论与最佳实践"
+
+
