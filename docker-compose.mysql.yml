@@ -1,0 +1,40 @@
+name: bettafish-mysql
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bettafish-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: bettafish_root_pass_2024
+      MYSQL_DATABASE: bettafish
+      MYSQL_USER: bettafish_user
+      MYSQL_PASSWORD: bettafish_pass_2024
+      TZ: Asia/Shanghai
+    ports:
+      - "3308:3306"
+    volumes:
+      - bettafish-mysql-data:/var/lib/mysql
+      - ./MindSpider/schema/mindspider_tables.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max_connections=1000
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pbettafish_root_pass_2024"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bettafish-net
+
+volumes:
+  bettafish-mysql-data:
+    driver: local
+
+networks:
+  bettafish-net:
+    driver: bridge
+
+
