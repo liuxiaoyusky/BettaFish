@@ -44,6 +44,48 @@
             letter-spacing: 1px;
         }
 
+        .scenario-selector-container {
+            max-width: 950px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scenario-selector-container label {
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .scenario-select {
+            padding: 8px 12px;
+            border: 2px solid #000000;
+            background-color: #ffffff;
+            color: #000000;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .scenario-select:hover {
+            background-color: #f5f5f5;
+        }
+
+        .scenario-select:focus {
+            border-color: #000000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .scenario-description {
+            color: #666;
+            font-size: 13px;
+            flex: 1;
+        }
+
         .search-row {
             display: flex;
             align-items: stretch;
@@ -1016,6 +1058,16 @@
         <!-- 搜索框区域 -->
         <div class="search-section">
             <div class="search-title">微舆 - 致力于打造简洁通用的舆情分析平台</div>
+            
+            <!-- 场景选择器 -->
+            <div class="scenario-selector-container">
+                <label for="scenarioSelect">分析场景：</label>
+                <select id="scenarioSelect" class="scenario-select">
+                    <option value="default">加载中...</option>
+                </select>
+                <span id="scenarioDescription" class="scenario-description"></span>
+            </div>
+            
             <div class="search-row">
                 <button class="config-button" id="openConfigButton">LLM 配置</button>
                 <div class="search-box">
@@ -1251,6 +1303,9 @@
             checkStatus();
             setInterval(checkStatus, 5000);
             
+            // 初始化场景选择器
+            loadScenarios();
+            
             // 初始化Report Engine锁定状态检查
             checkReportLockStatus();
             reportLockCheckInterval = setInterval(checkReportLockStatus, 10000); // 每10秒检查一次
@@ -1273,6 +1328,55 @@
                 preloadIframes();
             }, 3000);
         });
+
+        // 场景相关函数
+        async function loadScenarios() {
+            try {
+                const response = await fetch('/api/scenarios');
+                if (!response.ok) {
+                    throw new Error('加载场景列表失败');
+                }
+                
+                const scenarios = await response.json();
+                const select = document.getElementById('scenarioSelect');
+                select.innerHTML = '';
+                
+                if (scenarios.length === 0) {
+                    select.innerHTML = '<option value="default">默认场景</option>';
+                    return;
+                }
+                
+                scenarios.forEach(scenario => {
+                    const option = document.createElement('option');
+                    option.value = scenario.id;
+                    option.textContent = scenario.name;
+                    option.dataset.description = scenario.description;
+                    select.appendChild(option);
+                });
+                
+                // 显示第一个场景的描述
+                updateScenarioDescription();
+                
+                // 监听选择变化
+                select.addEventListener('change', updateScenarioDescription);
+            } catch (error) {
+                console.error('加载场景列表失败:', error);
+                const select = document.getElementById('scenarioSelect');
+                select.innerHTML = '<option value="default">默认场景</option>';
+            }
+        }
+        
+        function updateScenarioDescription() {
+            const select = document.getElementById('scenarioSelect');
+            const selected = select.options[select.selectedIndex];
+            const descSpan = document.getElementById('scenarioDescription');
+            descSpan.textContent = selected.dataset.description || '';
+        }
+        
+        function getSelectedScenario() {
+            const select = document.getElementById('scenarioSelect');
+            return select.value || 'default';
+        }
 
         // Socket.IO连接
         function initializeSocket() {
@@ -1843,6 +1947,10 @@
                 preloadIframes();
             }
             
+            // 获取选中的场景
+            const scenario = getSelectedScenario();
+            console.log(`使用场景: ${scenario}`);
+            
             // 向所有运行中的应用发送搜索请求（通过刷新iframe传递参数）
             let totalRunning = 0;
             const ports = { insight: 8501, media: 8502, query: 8503 };
@@ -1851,8 +1959,8 @@
                 if (appStatus[app] === 'running' && preloadedIframes[app]) {
                     totalRunning++;
                     
-                    // 构建搜索URL
-                    const searchUrl = `http://${window.location.hostname}:${ports[app]}?query=${encodeURIComponent(query)}&auto_search=true`;
+                    // 构建搜索URL，包含场景参数
+                    const searchUrl = `http://${window.location.hostname}:${ports[app]}?query=${encodeURIComponent(query)}&scenario=${encodeURIComponent(scenario)}&auto_search=true`;
                     console.log(`向 ${app} 发送搜索请求: ${searchUrl}`);
                     
                     // 直接更新主iframe的src来传递搜索参数

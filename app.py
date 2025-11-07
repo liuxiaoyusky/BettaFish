@@ -28,6 +28,14 @@ except ImportError as e:
     logger.error(f"ReportEngine导入失败: {e}")
     REPORT_ENGINE_AVAILABLE = False
 
+# 导入场景加载器
+try:
+    from utils.scenario_loader import get_scenario_loader
+    SCENARIO_LOADER_AVAILABLE = True
+except ImportError as e:
+    logger.error(f"场景加载器导入失败: {e}")
+    SCENARIO_LOADER_AVAILABLE = False
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Dedicated-to-creating-a-concise-and-versatile-public-opinion-analysis-platform'
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -589,7 +597,8 @@ def start_streamlit_app(app_name, script_path, port):
             '--browser.gatherUsageStats', 'false',
             # '--logger.level', 'debug',  # 增加日志详细程度
             '--logger.level', 'info',
-            '--server.enableCORS', 'false'
+            '--server.enableCORS', 'false',
+            '--server.enableXsrfProtection', 'false'  # 允许iframe嵌入
         ]
         
         # 设置环境变量确保UTF-8编码和减少缓冲
@@ -679,6 +688,20 @@ def check_app_status():
                 # 进程已结束
                 info['process'] = None
                 info['status'] = 'stopped'
+        else:
+            # 进程对象为None，但可能端口已被占用（应用已经在运行）
+            if info['port'] is not None:
+                try:
+                    response = requests.get(f"http://localhost:{info['port']}", timeout=1)
+                    if response.status_code == 200:
+                        info['status'] = 'running'
+                        logger.info(f"{app_name} 应用已在端口 {info['port']} 上运行（外部启动）")
+                    else:
+                        info['status'] = 'stopped'
+                except requests.exceptions.RequestException:
+                    info['status'] = 'stopped'
+                except Exception:
+                    info['status'] = 'stopped'
 
 def wait_for_app_startup(app_name, max_wait_time=30):
     """等待应用启动完成"""
@@ -938,6 +961,21 @@ def search():
         'query': query,
         'results': results
     })
+
+
+@app.route('/api/scenarios', methods=['GET'])
+def get_scenarios():
+    """获取所有可用场景配置"""
+    try:
+        if not SCENARIO_LOADER_AVAILABLE:
+            return jsonify({'error': '场景加载器不可用'}), 500
+        
+        loader = get_scenario_loader()
+        scenarios = loader.list_scenarios()
+        return jsonify(scenarios)
+    except Exception as e:
+        logger.error(f"获取场景列表失败: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/config', methods=['GET'])

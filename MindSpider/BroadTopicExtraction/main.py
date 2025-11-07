@@ -29,13 +29,18 @@ except ImportError as e:
 class BroadTopicExtraction:
     """BroadTopicExtraction主要工作流程"""
     
-    def __init__(self):
-        """初始化"""
+    def __init__(self, scenario_id: str = "default"):
+        """
+        初始化
+        
+        Args:
+            scenario_id: 场景配置ID（如"default"、"ai_tech"、"prompt_engineering"等）
+        """
         self.news_collector = NewsCollector()
-        self.topic_extractor = TopicExtractor()
+        self.topic_extractor = TopicExtractor(scenario_id=scenario_id)
         self.db_manager = DatabaseManager()
         
-        logger.info("BroadTopicExtraction 初始化完成")
+        logger.info(f"BroadTopicExtraction 初始化完成 (场景: {scenario_id})")
     
     def close(self):
         """关闭资源"""
@@ -233,11 +238,11 @@ class BroadTopicExtraction:
 
 # ==================== 命令行工具 ====================
 
-async def run_extraction_command(sources=None, keywords_count=100, show_details=True):
+async def run_extraction_command(sources=None, keywords_count=100, show_details=True, scenario_id="default"):
     """运行话题提取命令"""
     
     try:
-        async with BroadTopicExtraction() as extractor:
+        async with BroadTopicExtraction(scenario_id=scenario_id) as extractor:
             # 运行话题提取
             result = await extractor.run_daily_extraction(
                 news_sources=sources,
@@ -292,6 +297,8 @@ def main():
     parser.add_argument("--keywords", type=int, default=100, help="最大关键词数量 (默认100)")
     parser.add_argument("--quiet", action="store_true", help="简化输出模式")
     parser.add_argument("--list-sources", action="store_true", help="显示支持的新闻源")
+    parser.add_argument("--scenario", type=str, default="default", 
+                       help="场景配置 (default/ai_tech/prompt_engineering/deep_research)")
     
     args = parser.parse_args()
     
@@ -312,7 +319,8 @@ def main():
         success = asyncio.run(run_extraction_command(
             sources=args.sources,
             keywords_count=args.keywords,
-            show_details=not args.quiet
+            show_details=not args.quiet,
+            scenario_id=args.scenario
         ))
         
         sys.exit(0 if success else 1)
